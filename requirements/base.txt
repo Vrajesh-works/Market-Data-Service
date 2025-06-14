@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+sqlalchemy
+psycopg2-binary
+alembic
+requests
+confluent-kafka
+redis
+python-multipart
+python-dotenv
+aiohttp
+dotenv
