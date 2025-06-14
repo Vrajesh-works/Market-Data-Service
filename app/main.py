@@ -79,13 +79,8 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     contact={
-        "name": "Market Data Service Team",
-        "email": "support@marketdata.service",
-        "url": "https://github.com/your-org/market-data-service"
-    },
-    license_info={
-        "name": "MIT",
-        "url": "https://opensource.org/licenses/MIT"
+        "name": "Market Data Service Github",
+        "url": "https://github.com/Vrajesh-works/Market-Data-Service"
     },
     servers=[
         {
@@ -120,13 +115,12 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(prices.router, prefix=settings.API_V1_STR)
 
 
@@ -139,7 +133,9 @@ app.include_router(prices.router, prefix=settings.API_V1_STR)
 async def root():
     """
     API Root Endpoint
-    Returns basic information about the Market Data Service API
+    
+    Returns basic information about the Market Data Service API including:
+
     """
     return {
         "message": "Market Data Service API",
@@ -210,6 +206,7 @@ async def root():
 async def health_check():
     """
     System Health Check
+    
     Performs a comprehensive health check of all system components:
     """
     database_healthy = db_manager.health_check()
@@ -261,6 +258,7 @@ async def health_check():
 async def database_health():
     """
     Database Health Check
+    
     Performs a specific health check for the PostgreSQL database:
     """
     healthy = db_manager.health_check()

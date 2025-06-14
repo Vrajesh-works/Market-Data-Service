@@ -1,76 +1,44 @@
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
-from app.core.config import settings
-from app.models.database import Base
-import logging
+from pydantic_settings import BaseSettings
+from typing import Optional
+import os
+from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
+# Force reload environment variables
+load_dotenv(override=True)
 
-# Create database engine
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True,
-    echo=False,
-)
-
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def create_tables():
-    try:
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables created successfully")
-    except Exception as e:
-        logger.error(f"Error creating database tables: {e}")
-        raise
-
-
-def get_db() -> Session:
-    """
-    Dependency function to get database session
-    Use this in FastAPI endpoints with Depends()
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    except Exception as e:
-        logger.error(f"Database session error: {e}")
-        db.rollback()
-        raise
-    finally:
-        db.close()
-
-
-class DatabaseManager:    
-    def __init__(self):
-        self.engine = engine
-        self.SessionLocal = SessionLocal
+class Settings(BaseSettings):
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "Market Data Service"
+    VERSION: str = "1.0.0"
     
-    def get_session(self) -> Session:
-        return self.SessionLocal()
+    DATABASE_URL: str = "postgresql://user:password@localhost:5432/marketdata"
     
-    def health_check(self) -> bool:
-        try:
-            with self.engine.connect() as conn:
-                result = conn.execute(text("SELECT 1"))
-                return True
-        except Exception as e:
-            logger.error(f"Database health check failed: {e}")
-            return False
+    # Redis Cache
+    REDIS_URL: str = "redis://localhost:6379"
+    CACHE_TTL: int = 300  # 5 minutes
     
-    def create_tables(self):
-        create_tables()
+    # Kafka
+    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
+    KAFKA_TOPIC_PRICE_EVENTS: str = "price-events"
+    KAFKA_TOPIC_SYMBOL_AVERAGES: str = "symbol_averages"
     
-    def drop_tables(self):
-        try:
-            Base.metadata.drop_all(bind=self.engine)
-            logger.info("Database tables dropped successfully")
-        except Exception as e:
-            logger.error(f"Error dropping database tables: {e}")
-            raise
+    # Market Data Providers
+    ALPHA_VANTAGE_API_KEY: Optional[str] = None
+    DEFAULT_PROVIDER: str = "alpha_vantage"
+    
+    # Rate Limiting
+    ALPHA_VANTAGE_RATE_LIMIT: int = 5 
+    
+    # Polling Configuration
+    DEFAULT_POLL_INTERVAL: int = 60
+    MAX_SYMBOLS_PER_POLL: int = 10
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+        env_file_encoding = 'utf-8'
 
+settings = Settings()
 
-# Global database manager instance
-db_manager = DatabaseManager()
+# Debug: Print the DATABASE_URL to verify it's loaded correctly
+print(f"DEBUG: Loaded DATABASE_URL = {settings.DATABASE_URL}")
