@@ -91,7 +91,7 @@ sequenceDiagram
 ### 1. Clone and Setup
 ```bash
 # Clone repository (replace with actual repository URL if public)
-git clone https://github.com/yourusername/market-data-service.git
+git clone https://github.com/Vrajesh-works/market-data-service.git
 cd market-data-service
 
 # Create virtual environment
