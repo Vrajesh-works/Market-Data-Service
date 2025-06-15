@@ -403,3 +403,26 @@ Run the Docker container:
 ```bash
 docker run -p 8000:8000 -e DATABASE_URL=<your-db-url> -e ALPHA_VANTAGE_API_KEY=<your-api-key> market-data-service
 ```
+
+## 🌐 AWS Deployment Access
+
+The Market Data Service is deployed to AWS and accessible via the following endpoint:
+
+```
+http://market-data-alb-73511532.us-east-2.elb.amazonaws.com
+```
+
+### Example API Calls
+
+```bash
+# Health check
+curl http://market-data-alb-73511532.us-east-2.elb.amazonaws.com/health
+
+# Get latest price for AAPL
+curl http://market-data-alb-73511532.us-east-2.elb.amazonaws.com/api/v1/prices/latest?symbol=AAPL
+
+# Access Swagger documentation
+# Open in browser: http://market-data-alb-73511532.us-east-2.elb.amazonaws.com/docs
+```
+
+This endpoint is provided by an AWS Application Load Balancer in the us-east-2 (Ohio) region.
