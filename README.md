@@ -339,3 +339,43 @@ market-data-service/
 ├── .env.example                  # Environment template
 └── README.md                     # This file
 ```
+
+## 🧪 Testing
+
+### Test Suite
+
+The project includes a comprehensive test suite with different levels of testing:
+
+- **Unit Tests**: Test individual components in isolation
+- **Integration Tests**: Test interactions between components
+- **Functional Tests**: End-to-end tests of the complete pipeline
+
+### Running Tests
+
+```bash
+# Install development dependencies
+pip install -r requirements/dev.txt
+
+# Run all tests
+python scripts/run_tests.py --type all
+
+# Run specific test types
+python scripts/run_tests.py --type unit
+python scripts/run_tests.py --type integration
+python scripts/run_tests.py --type functional
+
+# Run with increased verbosity
+python scripts/run_tests.py --type unit -v
+```
+
+### Test Coverage
+
+Generate a test coverage report:
+
+```bash
+pytest --cov=app tests/
+```
+
+### Continuous Integration
+
+Tests are automatically run on every pull request and push to the main branch using GitHub Actions.
