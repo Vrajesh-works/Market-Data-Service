@@ -1,0 +1,208 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Market Data Service API",
+    "description": "Collection for testing the Market Data Service API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "System Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check the health status of all system components"
+          },
+          "response": []
+        },
+        {
+          "name": "Database Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/database",
+              "host": ["{{base_url}}"],
+              "path": ["health", "database"]
+            },
+            "description": "Check the health status of the database connection"
+          },
+          "response": []
+        }
+      ],
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "Prices",
+      "item": [
+        {
+          "name": "Get Latest Price",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/prices/latest?symbol=AAPL&provider=alpha_vantage&use_cache=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "prices", "latest"],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "AAPL",
+                  "description": "Stock symbol (e.g., AAPL, MSFT, GOOGL)"
+                },
+                {
+                  "key": "provider",
+                  "value": "alpha_vantage",
+                  "description": "Market data provider (optional)"
+                },
+                {
+                  "key": "use_cache",
+                  "value": "true",
+                  "description": "Use cached data if available (5-minute TTL)"
+                }
+              ]
+            },
+            "description": "Get the latest price for a stock symbol"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Price History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/prices/history/AAPL?hours=24",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "prices", "history", "AAPL"],
+              "query": [
+                {
+                  "key": "hours",
+                  "value": "24",
+                  "description": "Hours of history to retrieve (1-168 hours)"
+                }
+              ]
+            },
+            "description": "Get historical price data for a stock symbol"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Moving Average",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/prices/moving-average/AAPL?period=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "prices", "moving-average", "AAPL"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "5",
+                  "description": "Moving average period (number of data points)"
+                }
+              ]
+            },
+            "description": "Get the latest calculated moving average for a stock symbol"
+          },
+          "response": []
+        }
+      ],
+      "description": "Price data endpoints"
+    },
+    {
+      "name": "Polling Jobs",
+      "item": [
+        {
+          "name": "Start Polling Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbols\": [\"AAPL\", \"MSFT\"],\n  \"interval\": 60,\n  \"provider\": \"alpha_vantage\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/prices/poll",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "prices", "poll"]
+            },
+            "description": "Create a background job to continuously poll multiple symbols"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Polling Job Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/prices/poll/{{job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "prices", "poll", "{{job_id}}"]
+            },
+            "description": "Retrieve the current status and configuration of a polling job"
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Polling Job",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/prices/poll/{{job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "prices", "poll", "{{job_id}}"]
+            },
+            "description": "Stop a running polling job"
+          },
+          "response": []
+        }
+      ],
+      "description": "Polling job management endpoints"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "job_id",
+      "value": "poll_12345678",
+      "type": "string"
+    }
+  ]
+}

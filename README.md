@@ -14,38 +14,72 @@ This service provides:
 
 ## 🏗️ Architecture
 
-### System Architecture
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client App    │    │  Market Data    │    │   PostgreSQL    │
-│                 │───▶│   Service       │───▶│   Database      │
-│                 │    │   (FastAPI)     │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-                       ┌─────────────────┐
-                       │  Apache Kafka   │
-                       │                 │
-                       │ price-events    │
-                       │ symbol_averages │
-                       └─────────────────┘
-                                │
-                                ▼
-                       ┌─────────────────┐
-                       │ Moving Average  │
-                       │   Consumer      │
-                       │                 │
-                       └─────────────────┘
+### System Architecture Diagram
+```mermaid
+graph TB
+    subgraph "Market Data Service"
+        API["FastAPI Service"]
+        DB[(PostgreSQL)]
+        Cache[("Redis Cache<br/>")]
+    end
+    
+    subgraph "Message Queue"
+        Kafka["Apache Kafka"]
+        ZK["ZooKeeper"]
+        Producer["Price Producer"]
+        Consumer["MA Consumer"]
+    end
+    
+    subgraph "External Services"
+        MarketAPI["Market Data API<br/>(Alpha Vantage/YFinance)"]
+    end
+    
+    subgraph "Monitoring"
+        Prometheus["Prometheus<br/>[Optional]"]
+        Grafana["Grafana<br/>[Optional]"]
+    end
+    
+    Client["Client Application"] --> API
+    API --> DB
+    API --> Cache
+    API --> MarketAPI
+    
+    API --> Producer
+    Producer --> Kafka
+    Kafka --> Consumer
+    Consumer --> DB
+    
+    ZK <--> Kafka
+    
+    API --> Prometheus
+    Prometheus --> Grafana
 ```
 
-### Data Flow
-1. **Client** requests latest price via REST API
-2. **FastAPI Service** fetches data from market data provider
-3. **Raw data** stored in PostgreSQL database
-4. **Price event** published to Kafka `price-events` topic
-5. **Kafka Consumer** processes price event
-6. **Consumer** calculates 5-point moving average
-7. **Moving average** saved to database and published to `symbol_averages` topic
+### Flow Diagram: illustrate data movement through the system
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as FastAPI
+    participant M as Market API
+    participant K as Kafka
+    participant MA as MA Consumer
+    participant DB as PostgreSQL
+    
+    C->>A: GET /prices/latest
+    A->>DB: Check cache
+    alt Cache miss
+        A->>M: Fetch latest price
+        M-->>A: Price data
+        A->>DB: Store raw response
+        A->>K: Produce price event
+    end
+    A-->>C: Return price
+    
+    K->>MA: Consume price event
+    MA->>DB: Fetch last 5 prices
+    MA->>MA: Calculate MA
+    MA->>DB: Store MA resultV
+```
 
 ## 🚀 Quick Start
 
@@ -269,27 +303,6 @@ A comprehensive Postman collection is provided to help test and interact with th
    - Check job status: `GET /api/v1/prices/poll/{job_id}`
 
 The collection includes pre-configured requests with appropriate headers, query parameters, and request bodies.
-
-## 🏃‍♂️ Development
-
-### Local Development Setup
-```bash
-# Install development dependencies
-pip install -r requirements/dev.txt
-
-# Run with auto-reload
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Run tests
-pytest tests/
-
-# Format code
-black app/
-isort app/
-
-# Lint code
-flake8 app/
-```
 
 ### Project Structure
 ```
