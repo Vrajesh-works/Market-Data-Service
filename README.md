@@ -242,6 +242,34 @@ Calculated moving averages from consumers.
 ### Consumer Groups
 - `moving-average-calculator`: Processes price events and calculates moving averages
 
+## 📝 API Testing
+
+### Postman Collection
+
+A comprehensive Postman collection is provided to help test and interact with the API endpoints. The collection includes:
+
+- Health check endpoints
+- Price data retrieval endpoints
+- Moving average endpoints
+- Polling job management endpoints
+
+#### Using the Collection
+
+1. Import the collection into Postman:
+   - File → Import → Select `docs/postman_collection.json`
+
+2. Set up environment variables:
+   - Create a new environment in Postman
+   - Add variable `base_url` with value `http://localhost:8000`
+
+3. Run API tests:
+   - Get system health: `GET /health`
+   - Get latest price: `GET /api/v1/prices/latest?symbol=AAPL`
+   - Start polling job: `POST /api/v1/prices/poll`
+   - Check job status: `GET /api/v1/prices/poll/{job_id}`
+
+The collection includes pre-configured requests with appropriate headers, query parameters, and request bodies.
+
 ## 🏃‍♂️ Development
 
 ### Local Development Setup
