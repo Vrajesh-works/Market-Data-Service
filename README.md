@@ -90,7 +90,8 @@ sequenceDiagram
 
 ### 1. Clone and Setup
 ```bash
-git clone <repository-url>
+# Clone repository (replace with actual repository URL if public)
+git clone https://github.com/yourusername/market-data-service.git
 cd market-data-service
 
 # Create virtual environment
@@ -272,7 +273,6 @@ Calculated moving averages from consumers.
   "calculated_at": "2025-06-14T18:05:50.123456"
 }
 ```
-
 ### Consumer Groups
 - `moving-average-calculator`: Processes price events and calculates moving averages
 
@@ -379,3 +379,27 @@ pytest --cov=app tests/
 ### Continuous Integration
 
 Tests are automatically run on every pull request and push to the main branch using GitHub Actions.
+
+## 🔄 CI/CD
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+### Workflows
+
+- **Lint**: Runs flake8, black, and isort to ensure code quality
+- **Test**: Runs unit and integration tests with pytest
+- **Docker**: Builds and pushes Docker images
+
+### Docker Build
+
+Build the Docker image locally:
+
+```bash
+docker build -t market-data-service .
+```
+
+Run the Docker container:
+
+```bash
+docker run -p 8000:8000 -e DATABASE_URL=<your-db-url> -e ALPHA_VANTAGE_API_KEY=<your-api-key> market-data-service
+```
