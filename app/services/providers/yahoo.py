@@ -1,7 +1,8 @@
-import aiohttp
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
+
+import aiohttp
 
 from .base import MarketDataProvider
 
@@ -59,9 +60,7 @@ class YahooProvider(MarketDataProvider):
             raise ValueError(f"No price data found for symbol {symbol}")
 
         ts = meta.get("regularMarketTime")
-        timestamp = (
-            datetime.fromtimestamp(ts) if ts else datetime.now()
-        )
+        timestamp = datetime.fromtimestamp(ts) if ts else datetime.now()
 
         return self.format_response(
             symbol=symbol,

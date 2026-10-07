@@ -1,9 +1,11 @@
+import logging
+
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
+
 from app.core.config import settings
 from app.models.database import Base
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +14,9 @@ def _normalize_database_url(url: str) -> str:
     # Heroku/Render-style postgres:// URLs and SQLAlchemy 2.x both need
     # normalizing: use the psycopg2 driver pinned in requirements.
     if url.startswith("postgres://"):
-        url = "postgresql://" + url[len("postgres://"):]
+        url = "postgresql://" + url[len("postgres://") :]
     if url.startswith("postgresql://"):
-        url = "postgresql+psycopg2://" + url[len("postgresql://"):]
+        url = "postgresql+psycopg2://" + url[len("postgresql://") :]
     return url
 
 
@@ -39,7 +41,6 @@ def create_tables():
 
 
 def get_db() -> Session:
-
     db = SessionLocal()
     try:
         yield db
@@ -52,14 +53,13 @@ def get_db() -> Session:
 
 
 class DatabaseManager:
-    
     def __init__(self):
         self.engine = engine
         self.SessionLocal = SessionLocal
-    
+
     def get_session(self) -> Session:
         return self.SessionLocal()
-    
+
     def health_check(self) -> bool:
         try:
             with self.engine.connect() as conn:
@@ -68,10 +68,10 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Database health check failed: {e}")
             return False
-    
+
     def create_tables(self):
         create_tables()
-    
+
     def drop_tables(self):
         try:
             Base.metadata.drop_all(bind=self.engine)

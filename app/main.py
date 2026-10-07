@@ -1,13 +1,14 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import logging
 
+from app.api.routes import prices
 from app.core.config import settings
 from app.core.database import db_manager
 from app.services.market_data import market_data_service
-from app.api.routes import prices
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,21 +18,21 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Market Data Service...")
-    
+
     try:
         db_manager.create_tables()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
-    
+
     if db_manager.health_check():
         logger.info("Database health check passed")
     else:
         logger.warning("Database health check failed - some features may not work")
-    
+
     logger.info(f"Available providers: {list(market_data_service.providers.keys())}")
     yield
-    
+
     logger.info("Shutting down Market Data Service...")
 
 
@@ -81,42 +82,33 @@ app = FastAPI(
     openapi_url="/openapi.json",
     contact={
         "name": "Market Data Service Github",
-        "url": "https://github.com/Vrajesh-works/Market-Data-Service"
+        "url": "https://github.com/Vrajesh-works/Market-Data-Service",
     },
     servers=[
-        {
-            "url": "http://localhost:8000",
-            "description": "Development server"
-        },
-        {
-            "url": "https://api.marketdata.service",
-            "description": "Production server"
-        }
+        {"url": "http://localhost:8000", "description": "Development server"},
+        {"url": "https://api.marketdata.service", "description": "Production server"},
     ],
     tags_metadata=[
-        {
-            "name": "Health",
-            "description": "System health and status endpoints"
-        },
+        {"name": "Health", "description": "System health and status endpoints"},
         {
             "name": "Prices",
-            "description": "Real-time and historical price data operations"
+            "description": "Real-time and historical price data operations",
         },
         {
             "name": "Moving Averages",
-            "description": "Calculated moving averages from streaming pipeline"
+            "description": "Calculated moving averages from streaming pipeline",
         },
         {
             "name": "Polling Jobs",
-            "description": "Background job management for continuous data collection"
-        }
-    ]
+            "description": "Background job management for continuous data collection",
+        },
+    ],
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -129,12 +121,12 @@ app.include_router(prices.router, prefix=settings.API_V1_STR)
     "/",
     tags=["Root"],
     summary="API Root",
-    description="Welcome endpoint with basic API information and navigation links"
+    description="Welcome endpoint with basic API information and navigation links",
 )
 async def root():
     """
     API Root Endpoint
-    
+
     Returns basic information about the Market Data Service API including:
 
     """
@@ -150,13 +142,13 @@ async def root():
             "Moving averages",
             "Polling jobs",
             "Database persistence",
-            "Kafka streaming pipeline"
+            "Kafka streaming pipeline",
         ],
         "endpoints": {
             "health": "/health",
             "prices": "/api/v1/prices",
-            "documentation": "/docs"
-        }
+            "documentation": "/docs",
+        },
     }
 
 
@@ -178,11 +170,11 @@ async def root():
                         "components": {
                             "api": "healthy",
                             "database": "healthy",
-                            "providers": ["alpha_vantage"]
-                        }
+                            "providers": ["alpha_vantage"],
+                        },
                     }
                 }
-            }
+            },
         },
         503: {
             "description": "System is degraded",
@@ -196,18 +188,18 @@ async def root():
                         "components": {
                             "api": "healthy",
                             "database": "unhealthy",
-                            "providers": ["alpha_vantage"]
-                        }
+                            "providers": ["alpha_vantage"],
+                        },
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def health_check():
     """
     System Health Check
-    
+
     Performs a comprehensive health check of all system components:
     """
     database_healthy = db_manager.health_check()
@@ -221,8 +213,8 @@ async def health_check():
         "components": {
             "api": "healthy",
             "database": "healthy" if database_healthy else "unhealthy",
-            "providers": providers
-        }
+            "providers": providers,
+        },
     }
 
 
@@ -239,10 +231,10 @@ async def health_check():
                     "example": {
                         "status": "healthy",
                         "database": "connected",
-                        "message": "Database is accessible"
+                        "message": "Database is accessible",
                     }
                 }
-            }
+            },
         },
         503: {
             "description": "Database is unhealthy",
@@ -250,28 +242,28 @@ async def health_check():
                 "application/json": {
                     "example": {
                         "error": "Database is not accessible",
-                        "status_code": 503
+                        "status_code": 503,
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def database_health():
     """
     Database Health Check
-    
+
     Performs a specific health check for the PostgreSQL database:
     """
     healthy = db_manager.health_check()
-    
+
     if not healthy:
         raise HTTPException(status_code=503, detail="Database is not accessible")
-    
+
     return {
         "status": "healthy",
         "database": "connected",
-        "message": "Database is accessible"
+        "message": "Database is accessible",
     }
 
 
@@ -280,10 +272,7 @@ async def database_health():
 async def http_exception_handler(request, exc):
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "error": exc.detail,
-            "status_code": exc.status_code
-        }
+        content={"error": exc.detail, "status_code": exc.status_code},
     )
 
 
@@ -291,20 +280,13 @@ async def http_exception_handler(request, exc):
 async def general_exception_handler(request, exc):
     logger.error(f"Unexpected error: {exc}", exc_info=True)
     return JSONResponse(
-        status_code=500,
-        content={
-            "error": "Internal server error",
-            "status_code": 500
-        }
+        status_code=500, content={"error": "Internal server error", "status_code": 500}
     )
 
 
 if __name__ == "_main_":
     import uvicorn
+
     uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        "app.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
     )
