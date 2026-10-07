@@ -6,6 +6,7 @@ import logging
 
 from app.core.config import settings
 from app.core.database import db_manager
+from app.services.market_data import market_data_service
 from app.api.routes import prices
 
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +29,7 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("Database health check failed - some features may not work")
     
-    logger.info(f"Available providers: alpha_vantage")
+    logger.info(f"Available providers: {list(market_data_service.providers.keys())}")
     yield
     
     logger.info("Shutting down Market Data Service...")
@@ -46,14 +47,14 @@ app = FastAPI(
     ### 🎯 Key Features
     - *Real-time price data* from multiple providers
     - *Historical data* with configurable time ranges
-    - *Moving averages* calculation via Kafka streaming
+    - *Moving averages* calculated via the Kafka streaming pipeline, with on-demand computation from stored history when no broker is configured
     - *Polling jobs* for continuous data collection
     - *Database persistence* with full audit trail
     - *Intelligent caching* with 5-minute TTL
 
     ### 📊 Data Providers
-    - *Alpha Vantage*: Free tier with 5 calls/minute
-    - *Yahoo Finance*: Coming soon
+    - *Yahoo Finance*: Keyless default provider, no API key needed
+    - *Alpha Vantage*: Free tier with 5 calls/minute (requires API key)
     - *Finnhub*: Coming soon
 
     ### 🔄 Data Pipeline
@@ -210,7 +211,8 @@ async def health_check():
     Performs a comprehensive health check of all system components:
     """
     database_healthy = db_manager.health_check()
-    
+    providers = list(market_data_service.providers.keys())
+
     return {
         "status": "healthy" if database_healthy else "degraded",
         "service": settings.PROJECT_NAME,
@@ -219,7 +221,7 @@ async def health_check():
         "components": {
             "api": "healthy",
             "database": "healthy" if database_healthy else "unhealthy",
-            "providers": ["alpha_vantage"]
+            "providers": providers
         }
     }
 

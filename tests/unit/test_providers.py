@@ -44,7 +44,10 @@ async def test_alpha_vantage_get_latest_price():
     mock_session = MagicMock()
     mock_session.__aenter__ = AsyncMock(return_value=mock_session)
     mock_session.__aexit__ = AsyncMock(return_value=None)
-    mock_session.get = AsyncMock(return_value=mock_response)
+    mock_get = MagicMock()
+    mock_get.__aenter__ = AsyncMock(return_value=mock_response)
+    mock_get.__aexit__ = AsyncMock(return_value=None)
+    mock_session.get = MagicMock(return_value=mock_get)
     
     with patch("app.services.providers.alpha_vantage.aiohttp.ClientSession", return_value=mock_session):
         result = await provider.get_latest_price("AAPL")
@@ -71,7 +74,10 @@ async def test_alpha_vantage_error_handling():
     mock_session = MagicMock()
     mock_session.__aenter__ = AsyncMock(return_value=mock_session)
     mock_session.__aexit__ = AsyncMock(return_value=None)
-    mock_session.get = AsyncMock(return_value=mock_response)
+    mock_get = MagicMock()
+    mock_get.__aenter__ = AsyncMock(return_value=mock_response)
+    mock_get.__aexit__ = AsyncMock(return_value=None)
+    mock_session.get = MagicMock(return_value=mock_get)
     
     with patch("app.services.providers.alpha_vantage.aiohttp.ClientSession", return_value=mock_session):
         with pytest.raises(ValueError, match="Alpha Vantage API Error"):

@@ -39,6 +39,3 @@ class Settings(BaseSettings):
         env_file_encoding = 'utf-8'
 
 settings = Settings()
-
-# Debug: Print the DATABASE_URL to verify it's loaded correctly
-print(f"DEBUG: Loaded DATABASE_URL = {settings.DATABASE_URL}")

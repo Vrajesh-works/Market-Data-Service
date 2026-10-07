@@ -12,6 +12,10 @@ class AlphaVantageProvider(MarketDataProvider):
     
     def __init__(self, api_key: str = None):
         super().__init__(api_key or settings.ALPHA_VANTAGE_API_KEY)
+        # The base class derives "alphavantage" from the class name; the
+        # rest of the codebase (API enum, docs, DB records) uses
+        # "alpha_vantage", so pin it explicitly.
+        self.name = "alpha_vantage"
         if not self.api_key:
             raise ValueError("Alpha Vantage API key is required")
     

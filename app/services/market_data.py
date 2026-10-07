@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.services.providers.base import MarketDataProvider
 from app.services.providers.alpha_vantage import AlphaVantageProvider
+from app.services.providers.yahoo import YahooProvider
 from app.services.data_access import DataAccessLayer
 from app.services.kafka_producer import kafka_producer
 from app.core.config import settings
@@ -21,6 +22,9 @@ class MarketDataService:
         self._initialize_providers()
     
     def _initialize_providers(self):
+        # Yahoo is keyless and always available, so the service works
+        # out of the box with no API keys configured.
+        self.providers["yahoo"] = YahooProvider()
         try:
             self.providers["alpha_vantage"] = AlphaVantageProvider()
         except ValueError as e:
@@ -28,11 +32,15 @@ class MarketDataService:
     
     def get_provider(self, provider_name: Optional[str] = None) -> MarketDataProvider:
         provider_name = provider_name or settings.DEFAULT_PROVIDER
-        
+
         if provider_name not in self.providers:
+            # Fall back to the keyless Yahoo provider so the API stays
+            # usable when the configured default has no credentials.
+            if "yahoo" in self.providers:
+                return self.providers["yahoo"]
             available = list(self.providers.keys())
             raise ValueError(f"Provider '{provider_name}' not available. Available: {available}")
-        
+
         return self.providers[provider_name]
     
     async def get_latest_price(self, symbol: str, provider: Optional[str] = None, 
@@ -217,14 +225,14 @@ class MarketDataService:
             for p in history
         ]
     
-    def get_moving_average(self, symbol: str, period: int = 5, 
+    def get_moving_average(self, symbol: str, period: int = 5,
                           db: Session = None) -> Optional[Dict[str, Any]]:
         if not db:
             return None
-        
+
         dal = DataAccessLayer(db)
         ma = dal.get_latest_moving_average(symbol, period)
-        
+
         if ma:
             return {
                 "symbol": ma.symbol,
@@ -232,7 +240,20 @@ class MarketDataService:
                 "period": ma.period,
                 "timestamp": ma.timestamp
             }
-        
+
+        # Fallback: no Kafka consumer has populated moving averages
+        # (e.g. no broker configured), so compute one on demand from
+        # the stored price history instead of returning nothing.
+        prices = dal.get_last_n_prices(symbol, n=period)
+        if prices and len(prices) >= period:
+            values = [p.price for p in prices[:period]]
+            return {
+                "symbol": symbol.upper(),
+                "moving_average": sum(values) / len(values),
+                "period": period,
+                "timestamp": prices[0].timestamp
+            }
+
         return None
 
 

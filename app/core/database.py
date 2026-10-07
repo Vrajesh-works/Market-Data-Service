@@ -7,11 +7,22 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _normalize_database_url(url: str) -> str:
+    # Heroku/Render-style postgres:// URLs and SQLAlchemy 2.x both need
+    # normalizing: use the psycopg2 driver pinned in requirements.
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg2://" + url[len("postgresql://"):]
+    return url
+
+
 # Create database engine
 engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True,  
-    echo=False,  
+    _normalize_database_url(settings.DATABASE_URL),
+    pool_pre_ping=True,
+    echo=False,
 )
 
 # Create session factory
