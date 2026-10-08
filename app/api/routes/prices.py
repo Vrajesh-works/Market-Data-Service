@@ -57,8 +57,8 @@ async def get_latest_price(
     provider: Optional[str] = Query(
         None,
         description="Market data provider",
-        example="alpha_vantage",
-        enum=["alpha_vantage", "yahoo", "finnhub"],
+        example="yahoo",
+        enum=["yahoo", "alpha_vantage"],
     ),
     use_cache: bool = Query(
         True, description="Use cached data if available (5-minute TTL)"

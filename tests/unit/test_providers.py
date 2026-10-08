@@ -9,7 +9,7 @@ from app.services.providers.base import MarketDataProvider
 
 def test_base_provider_interface():
     with pytest.raises(TypeError):
-        provider = MarketDataProvider()
+        MarketDataProvider()
 
 
 def test_alpha_vantage_provider_init():

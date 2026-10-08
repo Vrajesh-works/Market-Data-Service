@@ -6,9 +6,8 @@ from pydantic import BaseModel, Field, validator
 
 
 class ProviderEnum(str, Enum):
-    ALPHA_VANTAGE = "alpha_vantage"
     YAHOO = "yahoo"
-    FINNHUB = "finnhub"
+    ALPHA_VANTAGE = "alpha_vantage"
 
 
 class PriceResponse(BaseModel):
@@ -23,9 +22,7 @@ class PriceResponse(BaseModel):
         description="When the price was fetched (ISO 8601 format)",
         example="2025-06-14T18:05:48.660453",
     )
-    provider: str = Field(
-        ..., description="Market data provider name", example="alpha_vantage"
-    )
+    provider: str = Field(..., description="Market data provider name", example="yahoo")
 
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
@@ -34,7 +31,7 @@ class PriceResponse(BaseModel):
                 "symbol": "AAPL",
                 "price": 196.45,
                 "timestamp": "2025-06-14T18:05:48.660453",
-                "provider": "alpha_vantage",
+                "provider": "yahoo",
             }
         }
 
@@ -52,8 +49,8 @@ class PollRequest(BaseModel):
     )
     provider: Optional[ProviderEnum] = Field(
         None,
-        description="Market data provider (defaults to alpha_vantage)",
-        example="alpha_vantage",
+        description="Market data provider (defaults to yahoo)",
+        example="yahoo",
     )
 
     @validator("symbols")
@@ -68,7 +65,7 @@ class PollRequest(BaseModel):
             "example": {
                 "symbols": ["AAPL", "MSFT", "GOOGL"],
                 "interval": 60,
-                "provider": "alpha_vantage",
+                "provider": "yahoo",
             }
         }
 
@@ -84,7 +81,7 @@ class PollResponse(BaseModel):
         example={
             "symbols": ["AAPL", "MSFT"],
             "interval": 60,
-            "provider": "alpha_vantage",
+            "provider": "yahoo",
         },
     )
 
@@ -96,7 +93,7 @@ class PollResponse(BaseModel):
                 "config": {
                     "symbols": ["AAPL", "MSFT"],
                     "interval": 60,
-                    "provider": "alpha_vantage",
+                    "provider": "yahoo",
                 },
             }
         }
@@ -167,7 +164,7 @@ class JobStatusResponse(BaseModel):
         example={
             "symbols": ["AAPL", "MSFT"],
             "interval": 60,
-            "provider": "alpha_vantage",
+            "provider": "yahoo",
         },
     )
     created_at: datetime = Field(
@@ -196,7 +193,7 @@ class JobStatusResponse(BaseModel):
                 "config": {
                     "symbols": ["AAPL", "MSFT"],
                     "interval": 60,
-                    "provider": "alpha_vantage",
+                    "provider": "yahoo",
                 },
                 "created_at": "2025-06-14T18:00:00.000000",
                 "last_run": "2025-06-14T18:05:00.000000",
@@ -221,7 +218,7 @@ class HealthResponse(BaseModel):
         example={
             "api": "healthy",
             "database": "healthy",
-            "providers": ["alpha_vantage"],
+            "providers": ["yahoo"],
         },
     )
 
@@ -235,7 +232,7 @@ class HealthResponse(BaseModel):
                 "components": {
                     "api": "healthy",
                     "database": "healthy",
-                    "providers": ["alpha_vantage"],
+                    "providers": ["yahoo"],
                 },
             }
         }

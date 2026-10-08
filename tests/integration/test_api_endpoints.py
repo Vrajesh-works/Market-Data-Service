@@ -1,4 +1,3 @@
-import pytest
 from fastapi import status
 
 from app.api.dependencies import get_market_data_service

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -6,12 +7,13 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.schemas.prices import ProviderEnum
 from app.services.data_access import DataAccessLayer
 from app.services.kafka_producer import kafka_producer
 from app.services.providers.alpha_vantage import AlphaVantageProvider
 from app.services.providers.base import MarketDataProvider
 from app.services.providers.yahoo import YahooProvider
+
+logger = logging.getLogger(__name__)
 
 
 class MarketDataService:
@@ -29,7 +31,7 @@ class MarketDataService:
         try:
             self.providers["alpha_vantage"] = AlphaVantageProvider()
         except ValueError as e:
-            print(f"Warning: Could not initialize Alpha Vantage provider: {e}")
+            logger.warning("Could not initialize Alpha Vantage provider: %s", e)
 
     def get_provider(self, provider_name: Optional[str] = None) -> MarketDataProvider:
         provider_name = provider_name or settings.DEFAULT_PROVIDER
@@ -86,7 +88,7 @@ class MarketDataService:
                     raw_response=result["raw_response"],
                 )
 
-                price_point = dal.save_price_point(
+                dal.save_price_point(
                     symbol=symbol,
                     price=result["price"],
                     timestamp=result["timestamp"],
@@ -148,8 +150,6 @@ class MarketDataService:
         if not job:
             return
 
-        provider_instance = self.get_provider(job["provider"])
-
         while job["status"] == "active":
             try:
                 if db:
@@ -168,12 +168,15 @@ class MarketDataService:
                             db=db,
                             use_cache=False,
                         )
-                        print(
-                            f"Polled {symbol}: ${price_data['price']} (Source: {price_data.get('source', 'unknown')}) → Kafka"
+                        logger.info(
+                            "Polled %s: $%s (Source: %s) -> Kafka",
+                            symbol,
+                            price_data["price"],
+                            price_data.get("source", "unknown"),
                         )
 
                     except Exception as e:
-                        print(f"Error polling {symbol}: {e}")
+                        logger.error("Error polling %s: %s", symbol, e)
                         if db:
                             dal = DataAccessLayer(db)
                             dal.update_polling_job_status(job_id, "error", str(e))
@@ -184,7 +187,7 @@ class MarketDataService:
                 await asyncio.sleep(job["interval"])
 
             except Exception as e:
-                print(f"Polling job {job_id} error: {e}")
+                logger.error("Polling job %s error: %s", job_id, e)
                 job["status"] = "error"
 
                 if db:

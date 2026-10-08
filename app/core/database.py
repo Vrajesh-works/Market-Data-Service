@@ -2,7 +2,6 @@ import logging
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
 from app.models.database import Base
@@ -63,7 +62,7 @@ class DatabaseManager:
     def health_check(self) -> bool:
         try:
             with self.engine.connect() as conn:
-                result = conn.execute(text("SELECT 1"))
+                conn.execute(text("SELECT 1"))
                 return True
         except Exception as e:
             logger.error(f"Database health check failed: {e}")

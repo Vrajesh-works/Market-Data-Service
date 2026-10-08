@@ -11,4 +11,3 @@ redis
 python-multipart
 python-dotenv
 aiohttp
-dotenv

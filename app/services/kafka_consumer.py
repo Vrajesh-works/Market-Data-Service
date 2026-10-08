@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from confluent_kafka import Consumer, KafkaError, Producer
 from sqlalchemy.orm import Session

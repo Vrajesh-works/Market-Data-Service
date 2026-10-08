@@ -1,16 +1,7 @@
-from datetime import datetime, timedelta
-
-import pytest
-
-from app.services.kafka_consumer import MovingAverageConsumer
-
-
 def test_calculate_moving_average():
     # Test with a list of 5 prices
     prices = [100, 101, 99, 102, 98]
     expected_average = 100.0
-
-    consumer = MovingAverageConsumer()
 
     result = sum(prices) / len(prices)
 

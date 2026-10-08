@@ -1,9 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.api.routes import prices
 from app.core.config import settings
@@ -12,6 +13,8 @@ from app.services.market_data import market_data_service
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 @asynccontextmanager
@@ -56,7 +59,6 @@ app = FastAPI(
     ### 📊 Data Providers
     - *Yahoo Finance*: Keyless default provider, no API key needed
     - *Alpha Vantage*: Free tier with 5 calls/minute (requires API key)
-    - *Finnhub*: Coming soon
 
     ### 🔄 Data Pipeline
     1. API fetches data from provider
@@ -86,7 +88,10 @@ app = FastAPI(
     },
     servers=[
         {"url": "http://localhost:8000", "description": "Development server"},
-        {"url": "https://api.marketdata.service", "description": "Production server"},
+        {
+            "url": "https://market-data-service-e0l6.onrender.com",
+            "description": "Production server",
+        },
     ],
     tags_metadata=[
         {"name": "Health", "description": "System health and status endpoints"},
@@ -120,16 +125,30 @@ app.include_router(prices.router, prefix=settings.API_V1_STR)
 @app.get(
     "/",
     tags=["Root"],
-    summary="API Root",
-    description="Welcome endpoint with basic API information and navigation links",
+    summary="API Landing Page",
+    description="Interactive landing page with a live API demo",
+    response_class=HTMLResponse,
+    include_in_schema=False,
 )
 async def root():
     """
-    API Root Endpoint
+    API Landing Page
 
-    Returns basic information about the Market Data Service API including:
-
+    Serves the interactive demo page. The previous JSON welcome payload
+    is available at /info.
     """
+    index = STATIC_DIR / "index.html"
+    return HTMLResponse(content=index.read_text(encoding="utf-8"))
+
+
+@app.get(
+    "/info",
+    tags=["Root"],
+    summary="API Info",
+    description="Basic API information and navigation links (JSON)",
+)
+async def api_info():
+    """Basic information about the Market Data Service API."""
     return {
         "message": "Market Data Service API",
         "version": settings.VERSION,
@@ -170,7 +189,7 @@ async def root():
                         "components": {
                             "api": "healthy",
                             "database": "healthy",
-                            "providers": ["alpha_vantage"],
+                            "providers": ["yahoo"],
                         },
                     }
                 }
@@ -188,7 +207,7 @@ async def root():
                         "components": {
                             "api": "healthy",
                             "database": "unhealthy",
-                            "providers": ["alpha_vantage"],
+                            "providers": ["yahoo"],
                         },
                     }
                 }

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Data Service - Live API</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e14;
+    --panel: #11161f;
+    --panel2: #161c28;
+    --border: #232c3d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --green-dim: #1a3a24;
+    --amber: #d29922;
+    --blue: #58a6ff;
+    --red: #f85149;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+    position: sticky;
+    top: 0;
+    background: rgba(10, 14, 20, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-weight: 700; font-size: 18px; letter-spacing: 0.5px; }
+  .logo span { color: var(--green); }
+  .status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 20px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .hero { padding: 56px 0 32px; text-align: center; }
+  .hero h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+  .hero h1 span { color: var(--green); }
+  .hero p { color: var(--muted); font-size: 17px; max-width: 640px; margin: 0 auto 24px; }
+  .hero-links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 10px 22px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; text-decoration: none;
+    border: 1px solid var(--border); color: var(--text);
+    background: var(--panel); transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--green); transform: translateY(-1px); }
+  .btn.primary { background: var(--green); border-color: var(--green); color: #04120a; }
+  .btn.primary:hover { background: #46c75c; }
+  .demo { padding: 12px 0 40px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 20px;
+  }
+  .panel h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .search-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .search-row input {
+    flex: 1; min-width: 180px; padding: 12px 16px; font-size: 16px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); text-transform: uppercase; font-weight: 600; letter-spacing: 1px;
+  }
+  .search-row input:focus { outline: none; border-color: var(--green); }
+  .search-row button {
+    padding: 12px 24px; font-size: 14px; font-weight: 700; cursor: pointer;
+    background: var(--green); color: #04120a; border: none; border-radius: 8px;
+  }
+  .search-row button:hover { background: #46c75c; }
+  .search-row button:disabled { opacity: 0.5; cursor: wait; }
+  .quick { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quick button {
+    padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: var(--panel2); color: var(--blue); border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .quick button:hover { border-color: var(--blue); }
+  .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 20px; }
+  .stat {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px;
+  }
+  .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .stat .value { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stat .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .stat .value.green { color: var(--green); }
+  .stat .value.blue { color: var(--blue); }
+  .stat .value.amber { color: var(--amber); }
+  .chart-box { position: relative; height: 320px; margin-top: 8px; }
+  .error {
+    background: rgba(248, 81, 73, 0.1); border: 1px solid var(--red);
+    color: var(--red); padding: 12px 16px; border-radius: 8px;
+    font-size: 14px; margin-top: 16px; display: none;
+  }
+  .loading { color: var(--muted); font-size: 14px; margin-top: 16px; display: none; }
+  .endpoints { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .ep {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px; font-size: 13px;
+  }
+  .ep .method {
+    display: inline-block; font-weight: 800; font-size: 11px; padding: 2px 8px;
+    border-radius: 4px; margin-right: 8px; letter-spacing: 0.5px;
+  }
+  .method.get { background: var(--green-dim); color: var(--green); }
+  .method.post { background: rgba(210, 153, 34, 0.15); color: var(--amber); }
+  .method.del { background: rgba(248, 81, 73, 0.12); color: var(--red); }
+  .ep code { color: var(--blue); font-family: ui-monospace, monospace; }
+  .ep p { color: var(--muted); margin-top: 6px; }
+  .stack { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+  .stack span {
+    font-size: 12px; padding: 4px 12px; border-radius: 20px;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--muted);
+  }
+  footer {
+    border-top: 1px solid var(--border); padding: 24px 0 40px;
+    text-align: center; color: var(--muted); font-size: 13px;
+  }
+  footer a { color: var(--blue); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">MARKET<span>DATA</span> · SERVICE</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">checking...</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Market Data <span>API</span></h1>
+    <p>A production-grade microservice serving real-time stock prices, history, and moving averages. Keyless Yahoo Finance provider, PostgreSQL persistence, optional Kafka streaming.</p>
+    <div class="hero-links">
+      <a class="btn primary" href="/docs" target="_blank">Swagger Docs</a>
+      <a class="btn" href="/redoc" target="_blank">ReDoc</a>
+      <a class="btn" href="https://github.com/Vrajesh-works/Market-Data-Service" target="_blank">GitHub</a>
+    </div>
+    <div class="stack" style="margin-top:20px">
+      <span>FastAPI</span><span>PostgreSQL</span><span>Kafka</span><span>Yahoo Finance</span><span>Render</span><span>Neon</span>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="panel">
+      <h2>Live Demo - Price Lookup</h2>
+      <div class="search-row">
+        <input id="symbolInput" placeholder="SYMBOL (e.g. AAPL)" maxlength="10" value="AAPL">
+        <button id="lookupBtn" onclick="lookup()">Get Price</button>
+      </div>
+      <div class="quick">
+        <button onclick="quick('AAPL')">AAPL</button>
+        <button onclick="quick('MSFT')">MSFT</button>
+        <button onclick="quick('GOOGL')">GOOGL</button>
+        <button onclick="quick('NVDA')">NVDA</button>
+        <button onclick="quick('TSLA')">TSLA</button>
+        <button onclick="quick('AMZN')">AMZN</button>
+      </div>
+      <div class="loading" id="loading">Fetching live data...</div>
+      <div class="error" id="error"></div>
+      <div class="result-grid" id="results" style="display:none">
+        <div class="stat">
+          <div class="label">Latest Price</div>
+          <div class="value green" id="rPrice">-</div>
+          <div class="sub" id="rSymbol">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">Provider</div>
+          <div class="value blue" id="rProvider" style="font-size:22px">-</div>
+          <div class="sub" id="rTime">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">Moving Avg (5)</div>
+          <div class="value amber" id="rMA">-</div>
+          <div class="sub">computed from stored history</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Price History</h2>
+      <div class="chart-box"><canvas id="chart"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <h2>API Endpoints</h2>
+      <div class="endpoints">
+        <div class="ep"><span class="method get">GET</span><code>/api/v1/prices/latest?symbol=AAPL</code><p>Latest price with intelligent caching</p></div>
+        <div class="ep"><span class="method get">GET</span><code>/api/v1/prices/history/AAPL?hours=24</code><p>Historical prices, up to 7 days</p></div>
+        <div class="ep"><span class="method get">GET</span><code>/api/v1/prices/moving-average/AAPL?period=5</code><p>Moving average, Kafka or on-demand</p></div>
+        <div class="ep"><span class="method post">POST</span><code>/api/v1/prices/poll</code><p>Start a background polling job</p></div>
+        <div class="ep"><span class="method get">GET</span><code>/api/v1/prices/poll/{job_id}</code><p>Check polling job status</p></div>
+        <div class="ep"><span class="method del">DEL</span><code>/api/v1/prices/poll/{job_id}</code><p>Stop a polling job</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    Built with FastAPI, PostgreSQL, and Kafka · Deployed on Render + Neon ·
+    <a href="https://github.com/Vrajesh-works/Market-Data-Service" target="_blank">Source on GitHub</a>
+  </div>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+let chart = null;
+
+async function checkHealth() {
+  try {
+    const r = await fetch('/health');
+    const j = await r.json();
+    if (j.status === 'healthy' || j.status === 'degraded') {
+      $('statusDot').className = 'dot live';
+      const prov = (j.components && j.components.providers || []).join(', ');
+      $('statusText').textContent = 'live · ' + prov;
+    } else {
+      $('statusText').textContent = 'unreachable';
+    }
+  } catch (e) {
+    $('statusText').textContent = 'unreachable';
+  }
+}
+
+function quick(sym) {
+  $('symbolInput').value = sym;
+  lookup();
+}
+
+function showError(msg) {
+  const e = $('error');
+  e.textContent = msg;
+  e.style.display = 'block';
+  setTimeout(() => e.style.display = 'none', 6000);
+}
+
+async function lookup() {
+  const sym = $('symbolInput').value.trim().toUpperCase();
+  if (!sym) { showError('Enter a stock symbol.'); return; }
+  const btn = $('lookupBtn');
+  btn.disabled = true;
+  $('loading').style.display = 'block';
+  $('results').style.display = 'none';
+
+  try {
+    const [priceR, maR, histR] = await Promise.all([
+      fetch('/api/v1/prices/latest?symbol=' + encodeURIComponent(sym)),
+      fetch('/api/v1/prices/moving-average/' + encodeURIComponent(sym) + '?period=5'),
+      fetch('/api/v1/prices/history/' + encodeURIComponent(sym) + '?hours=168')
+    ]);
+
+    if (!priceR.ok) {
+      const err = await priceR.json().catch(() => ({}));
+      throw new Error(err.detail || ('Price lookup failed (' + priceR.status + ')'));
+    }
+    const price = await priceR.json();
+    $('rPrice').textContent = '$' + Number(price.price).toFixed(2);
+    $('rSymbol').textContent = price.symbol;
+    $('rProvider').textContent = price.provider || 'yahoo';
+    $('rTime').textContent = new Date(price.timestamp).toLocaleString();
+
+    if (maR.ok) {
+      const ma = await maR.json();
+      $('rMA').textContent = '$' + Number(ma.moving_average).toFixed(2);
+    } else {
+      $('rMA').textContent = 'n/a';
+    }
+
+    if (histR.ok) {
+      const hist = await histR.json();
+      drawChart(hist);
+    }
+
+    $('results').style.display = 'grid';
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    btn.disabled = false;
+    $('loading').style.display = 'none';
+  }
+}
+
+function drawChart(hist) {
+  const pts = hist.slice().reverse();
+  const labels = pts.map(p => new Date(p.timestamp).toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric'}));
+  const data = pts.map(p => p.price);
+  const ctx = $('chart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: pts.length ? pts[0].symbol + ' price' : 'price',
+        data,
+        borderColor: '#3fb950',
+        backgroundColor: 'rgba(63,185,80,0.08)',
+        fill: true,
+        tension: 0.25,
+        pointRadius: 0,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8b949e' } } },
+      scales: {
+        x: { ticks: { color: '#8b949e', maxTicksLimit: 8 }, grid: { color: '#1a2230' } },
+        y: { ticks: { color: '#8b949e' }, grid: { color: '#1a2230' } }
+      }
+    }
+  });
+}
+
+$('symbolInput').addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); });
+checkHealth();
+lookup();
+</script>
+</body>
+</html>

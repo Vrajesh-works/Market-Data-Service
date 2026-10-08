@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 
 from app.core.config import settings
 from app.services.market_data import MarketDataService, market_data_service
@@ -22,9 +22,9 @@ def validate_symbol(symbol: str) -> str:
 
 
 def validate_provider(provider: str = None) -> str:
-    if provider and provider not in ["alpha_vantage", "yahoo", "finnhub"]:
+    if provider and provider not in ["yahoo", "alpha_vantage"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid provider. Supported: alpha_vantage, yahoo, finnhub",
+            detail="Invalid provider. Supported: yahoo, alpha_vantage",
         )
     return provider
